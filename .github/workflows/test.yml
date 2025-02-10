@@ -104,6 +104,7 @@ jobs:
     needs: [ generate-matrix, build ]
     continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.docker_test_matrix) }}
     steps:
     - name: Checkout
@@ -142,6 +143,7 @@ jobs:
     needs: [ generate-matrix, build ]
     continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.docker_test_matrix) }}
     steps:
     - name: Checkout
@@ -190,6 +192,7 @@ jobs:
     needs: [ generate-matrix, build ]
     continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.docker_test_matrix) }}
     steps:
     - name: Checkout
