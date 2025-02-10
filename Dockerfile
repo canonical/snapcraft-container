@@ -105,7 +105,7 @@ RUN rm -vf /usr/share/systemd/tmp.mount
 RUN echo ShowStatus=no >> /etc/systemd/system.conf
 
 # disable ondemand.service
-RUN  if [ "$BASE_OS" != "noble" ]; then systemctl disable ondemand.service; fi
+RUN  systemctl disable ondemand.service || true
 
 # set basic.target as default
 RUN systemctl set-default basic.target
