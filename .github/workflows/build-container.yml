@@ -8,6 +8,12 @@ on:
     - master
   workflow_dispatch:
 
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -27,6 +33,9 @@ jobs:
         - base: core22
           base_os: jammy
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le #,linux/s390x
+        - base: core24
+          base_os: noble
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -34,7 +43,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: diddledani/snapcraft
+        images:  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=branch,prefix=${{ matrix.cfg.base }}-
           type=ref,event=pr,prefix=${{ matrix.cfg.base }}-
@@ -45,7 +54,7 @@ jobs:
         labels: |
           org.opencontainers.image.title=Snapcraft for ${{ matrix.cfg.base }} builds
           org.opencontainers.image.description=Image of Snapcraft for building projects targeting the ${{ matrix.cfg.base }} base snap.
-          org.opencontainers.image.authors=diddledani@ubuntu.com
+          org.opencontainers.image.authors=massimiliano.girardi@canonical.com
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -53,8 +62,9 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push
       uses: docker/build-push-action@v6
       with:
