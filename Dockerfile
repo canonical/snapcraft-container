@@ -54,7 +54,7 @@ RUN mksquashfs /snap/snapd/current /snapd.snap
 
 
 # Prepare the filesystem to copy into a blank image
-FROM ubuntu:${BASE_OS} as base
+FROM ubuntu:${BASE_OS} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -105,7 +105,7 @@ RUN rm -vf /usr/share/systemd/tmp.mount
 RUN echo ShowStatus=no >> /etc/systemd/system.conf
 
 # disable ondemand.service
-RUN systemctl disable ondemand.service
+RUN  if [ "$BASE_OS" != "noble" ]; then systemctl disable ondemand.service; fi
 
 # set basic.target as default
 RUN systemctl set-default basic.target
