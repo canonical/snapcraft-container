@@ -13,10 +13,8 @@ jobs:
     - name: Generate Build Matrix
       id: matrix
       run: |
-        #PLATFORMS=(linux/arm/v7 linux/arm64) # linux/s390x)
-        PLATFORMS=(linux/arm/v7)
-        #BASES=(core core18 core20 core22 core24)
-        BASES=(core22 core24)
+        PLATFORMS=(linux/arm/v7 linux/arm64) # linux/s390x)
+        BASES=(core core18 core20 core22 core24)
 
         BUILD_MATRIX=
         DOCKER_TEST_MATRIX=
@@ -77,6 +75,7 @@ jobs:
       uses: docker/setup-qemu-action@v3
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
+        # also see: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2096782
         image: ${{ matrix.base.os != 'jammy' && 'tonistiigi/binfmt:master' || 'tonistiigi/binfmt:qemu-v7.0.0-28' }}
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
