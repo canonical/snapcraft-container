@@ -22,19 +22,19 @@ jobs:
         cfg:
         - base: core
           base_os: xenial
-          platforms: linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
         - base: core18
           base_os: bionic
-          platforms: linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
         - base: core20
           base_os: focal
-          platforms: linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
         - base: core22
           base_os: jammy
-          platforms: linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
         - base: core24
           base_os: noble
-          platforms: linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
     steps:
     - name: Checkout
       uses: actions/checkout@v4
