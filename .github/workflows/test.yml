@@ -2,6 +2,12 @@ name: Build and Test
 
 on:
   pull_request:
+    paths:
+      - Dockerfile
+      - entrypoint.sh
+      - tests/**
+      - systemd-detect-virt
+      - .github/workflows/test.yml
 
 jobs:
   generate-matrix:
