@@ -6,6 +6,7 @@ on:
   push:
     branches:
     - master
+    - core24_support
   workflow_dispatch:
 
 env:
