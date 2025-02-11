@@ -13,8 +13,10 @@ jobs:
     - name: Generate Build Matrix
       id: matrix
       run: |
-        PLATFORMS=(linux/arm/v7 linux/arm64) # linux/s390x)
-        BASES=(core core18 core20 core22 core24)
+        #PLATFORMS=(linux/arm/v7 linux/arm64) # linux/s390x)
+        PLATFORMS=(linux/arm/v7)
+        #BASES=(core core18 core20 core22 core24)
+        BASES=(core22 core24)
 
         BUILD_MATRIX=
         DOCKER_TEST_MATRIX=
