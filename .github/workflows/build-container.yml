@@ -23,19 +23,19 @@ jobs:
         cfg:
         - base: core
           base_os: xenial
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/arm64,linux/arm/v7
         - base: core18
           base_os: bionic
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/arm64,linux/arm/v7
         - base: core20
           base_os: focal
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/arm64,linux/arm/v7
         - base: core22
           base_os: jammy
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/arm64,linux/arm/v7
         - base: core24
           base_os: noble
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/arm64,linux/arm/v7
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -59,10 +59,11 @@ jobs:
       uses: docker/setup-qemu-action@v3
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
-        image: tonistiigi/binfmt:master
+        # also see: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2096782
+        image: ${{ matrix.cfg.base_os != 'jammy' && 'tonistiigi/binfmt:master' || 'tonistiigi/binfmt:qemu-v7.0.0-28' }}
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    - name: Login to DockerHub
+    - name: Login to ghio
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}

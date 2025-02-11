@@ -86,6 +86,7 @@ jobs:
         file: ./Dockerfile
         platforms: ${{ matrix.platform }}
         tags: test-image
+        no-cache: true
         push: false
         outputs: type=docker,dest=test-image.tar
         build-args:
