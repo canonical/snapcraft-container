@@ -1,60 +1,7 @@
 ARG BASE_OS=xenial
 
-# Download and repack snapd with a replacement squashfs-tools to
-# fix a bug with mksquashfs when packing a built snap.
-# See: https://bugs.launchpad.net/snapd/+bug/1733598
-FROM ubuntu:xenial as snapd
-
-ENV DEBIAN_FRONTEND=noninteractive
-ENV LDFLAGS=-static
-
-# Run apt-get commands together to always ensure apt-get update is run
-# before using apt-get install to avoid issues with stale apt caches.
-RUN apt-get update -qq && \
-	apt-get dist-upgrade --yes && \
-	apt-get install --yes -qq --no-install-recommends \
-		fuse \
-		gnupg \
-		python3 \
-		snapd \
-		sudo \
-		systemd \
-		build-essential \
-		git \
-		help2man \
-		zlib1g-dev \
-		liblz4-dev \
-		liblzma-dev \
-		liblzo2-dev
-
-# Fetch and compile squashfs-tools
-RUN git clone https://github.com/plougher/squashfs-tools.git
-RUN cd squashfs-tools && \
-	git checkout 4.5.1 && \
-	sed -Ei 's/#(XZ_SUPPORT.*)/\1/' squashfs-tools/Makefile && \
-	sed -Ei 's/#(LZO_SUPPORT.*)/\1/' squashfs-tools/Makefile && \
-	sed -Ei 's/#(LZ4_SUPPORT.*)/\1/' squashfs-tools/Makefile && \
-	sed -Ei 's|(INSTALL_PREFIX = ).*|\1 /usr|' squashfs-tools/Makefile && \
-	sed -Ei 's/\$\(INSTALL_DIR\)/$(DESTDIR)$(INSTALL_DIR)/g' squashfs-tools/Makefile && \
-	cd squashfs-tools && \
-	make -j$(nproc) && \
-	make install
-
-# Download and unpack snapd
-RUN mkdir -p /snap/snapd/current
-RUN snap download snapd
-RUN unsquashfs -f -d /snap/snapd/current snapd_*.snap
-
-# Replace mksquashfs and unsqusahfs with our own
-RUN cp /usr/bin/mksquashfs /snap/snapd/current/usr/bin
-RUN cp /usr/bin/unsquashfs /snap/snapd/current/usr/bin
-
-# Repack snapd
-RUN mksquashfs /snap/snapd/current /snapd.snap
-
-
 # Prepare the filesystem to copy into a blank image
-FROM ubuntu:${BASE_OS} as base
+FROM ubuntu:${BASE_OS} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -105,7 +52,7 @@ RUN rm -vf /usr/share/systemd/tmp.mount
 RUN echo ShowStatus=no >> /etc/systemd/system.conf
 
 # disable ondemand.service
-RUN systemctl disable ondemand.service
+RUN systemctl disable ondemand.service || true
 
 # set basic.target as default
 RUN systemctl set-default basic.target
@@ -124,9 +71,6 @@ ENV container=docker \
 
 # Copy the entire filesystem from the base image
 COPY --from=base / /
-
-# Copy the snapd snap from the snapd image
-COPY --from=snapd /snapd.snap /snapd.snap
 
 # Add our entrypoint
 ADD entrypoint.sh /bin/
