@@ -2,7 +2,7 @@ Usage
 -----
 
 These containers are meant to be used with the action:
-https://github.com/Hook25/snapcraft-multiarch-action.
+[snapcraft-multiarch-action](https://github.com/canonical/snapcraft-multiarch-action)
 
 These container images start systemd and execute the command line passed on
 invokation. The commandline is executed as an interactive systemd service unit.
@@ -42,26 +42,26 @@ Running without specifying a command will run `snapcraft` without any
 parameters:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/hook25/snapcraft-container:core24
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24
 ```
 
 To run with parameters, specify `snapcraft [...params]` when creating the
 container:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/hook25/snapcraft-container:core24 snapcraft stage --enable-experimental-package-repositories
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 snapcraft stage --enable-experimental-package-repositories
 ```
 
 Drop to a shell with systemd running
 ------------------------------------
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/hook25/snapcraft-container:core24 bash
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 bash
 ```
 
 Drop to a shell without starting systemd
 ----------------------------------------
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data --entrypoint bash ghcr.io/hook25/snapcraft-container:core24
+docker run --rm -it --privileged -v $PWD:/data -w /data --entrypoint bash ghcr.io/canonical/snapcraft-container:core24
 ```
