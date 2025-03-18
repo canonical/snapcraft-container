@@ -19,7 +19,7 @@ jobs:
     - name: Generate Build Matrix
       id: matrix
       run: |
-        PLATFORMS=(linux/amd64 linux/arm/v7 linux/arm64) # linux/s390x)
+        PLATFORMS=(linux/amd64 linux/arm/v7 linux/arm64 linux/riscv64) # linux/s390x)
         BASES=(core core18 core20 core22 core24)
 
         BUILD_MATRIX=
@@ -52,6 +52,8 @@ jobs:
           esac
 
           for platform in ${PLATFORMS[@]}; do
+            # only build risv64 for core24
+            [ "$platform" = "linux/riscv64" ] && [ "$base" != "core24" ] && continue
             [ "$platform" = "linux/386"  ] &&   [ "$base" != "core" ] && [ "$base" != "core18" ]   && continue
             [ "$platform" = "linux/s390" ] && ( [ "$base"  = "core" ] || [ "$base"  = "core18" ] ) && continue
 
