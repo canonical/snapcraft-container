@@ -53,7 +53,7 @@ jobs:
 
           for platform in ${PLATFORMS[@]}; do
             # only build risv64 for core24
-            [ "$platform" = "linux/riscv64" ] && [ "$base" != "core24" ] && continue
+            [ "$platform" = "linux/riscv64" ] && [ "$base" != "core24" ] && [ "$base" != "core22" ] && continue
             [ "$platform" = "linux/386"  ] &&   [ "$base" != "core" ] && [ "$base" != "core18" ]   && continue
             [ "$platform" = "linux/s390" ] && ( [ "$base"  = "core" ] || [ "$base"  = "core18" ] ) && continue
 
