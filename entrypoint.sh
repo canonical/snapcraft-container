@@ -63,6 +63,8 @@ $CMD $args
 EOF
 chmod +x /usr/local/bin/docker_commandline.sh
 
+# here we force install/refresh snapd as the deb version may be outdated and
+# not support installing the snapcraft base anymore
 cat > /etc/systemd/system/docker-exec.service <<EOF
 [Unit]
 Description=Docker commandline
@@ -70,7 +72,7 @@ Wants=snapd.seeded.service
 After=snapd.service snapd.socket snapd.seeded.service
 
 [Service]
-ExecStartPre=/bin/bash -c '/usr/bin/snap install snapcraft --classic --channel $USE_SNAPCRAFT_CHANNEL < /dev/null'
+ExecStartPre=/bin/bash -c '/usr/bin/snap install snapd || /usr/bin/snap refresh snapd && /usr/bin/snap install snapcraft --classic --channel $USE_SNAPCRAFT_CHANNEL < /dev/null'
 ExecStart=/usr/local/bin/docker_commandline.sh
 Environment="SNAPPY_LAUNCHER_INSIDE_TESTS=true"
 Environment="LANG=C.UTF-8"
