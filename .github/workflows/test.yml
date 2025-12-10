@@ -29,12 +29,14 @@ jobs:
           channel=latest/stable
           runner=ubuntu-latest
 
+          # use focal runner (which is a SHR) to run core builds as they
+          # require xenial lxd which requires cgroup v1
           case $base in
             core)
               os=xenial
               channel=4.x/stable
               experimenal=true
-              runner=ubuntu-20.04
+              runner=focal
               ;;
             core18)
               os=bionic
