@@ -113,6 +113,11 @@ fi
 if grep -q securityfs /proc/filesystems; then
     mount -o rw,nosuid,nodev,noexec,relatime securityfs -t securityfs /sys/kernel/security
 fi
+if [ -f /sys/module/apparmor/parameters/enabled ]; then
+  echo N > /tmp/apparmor_disabled
+  mount --bind /tmp/apparmor_disabled /sys/module/apparmor/parameters/enabled 2>/dev/null || true
+fi
+mkdir -p /run/lock
 mount -t tmpfs tmpfs /run
 mount -t tmpfs tmpfs /run/lock
 exec /lib/systemd/systemd --system --system-unit docker-exec.service

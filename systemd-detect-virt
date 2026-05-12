@@ -1,6 +1,5 @@
 #!/bin/sh
 
 if [ "$1" != "--quiet" ]; then
-    echo -n wsl
+    echo -n docker
 fi
-

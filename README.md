@@ -42,26 +42,26 @@ Running without specifying a command will run `snapcraft` without any
 parameters:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core26
 ```
 
 To run with parameters, specify `snapcraft [...params]` when creating the
 container:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 snapcraft stage --enable-experimental-package-repositories
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core26 snapcraft stage --enable-experimental-package-repositories
 ```
 
 Drop to a shell with systemd running
 ------------------------------------
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 bash
+docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core26 bash
 ```
 
 Drop to a shell without starting systemd
 ----------------------------------------
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data --entrypoint bash ghcr.io/canonical/snapcraft-container:core24
+docker run --rm -it --privileged -v $PWD:/data -w /data --entrypoint bash ghcr.io/canonical/snapcraft-container:core26
 ```
