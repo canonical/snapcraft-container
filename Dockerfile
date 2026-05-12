@@ -13,8 +13,10 @@ RUN apt-get update -qq && \
 		build-essential \
 		fuse \
 		gnupg \
+    kmod \
 		python3 \
 		snapd \
+    squashfuse \
 		sudo \
 		systemd
 
@@ -28,6 +30,9 @@ RUN touch /var/lib/snapd/system-key
 # stop udevadm from working
 RUN dpkg-divert --local --rename --add /sbin/udevadm
 RUN ln -s /bin/true /sbin/udevadm
+
+RUN rm /usr/bin/systemd-detect-virt || true
+ADD systemd-detect-virt /usr/bin/
 
 # remove systemd 'wants' triggers
 RUN rm -f \
@@ -74,7 +79,6 @@ COPY --from=base / /
 
 # Add our entrypoint
 ADD entrypoint.sh /bin/
-ADD systemd-detect-virt /usr/bin/
 
 # Ensure docker sends the shutdown signal that systemd expects
 STOPSIGNAL SIGRTMIN+3
