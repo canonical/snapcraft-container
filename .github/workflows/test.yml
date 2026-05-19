@@ -55,7 +55,7 @@ jobs:
               channel=9.x/stable
               ;;
             core26)
-              os=resolute
+              os=noble # base -> base os pairing has no meaning and resolute base os doesn't work
               ;;
           esac
 
@@ -71,7 +71,7 @@ jobs:
             experimental=false
             [ "$platform" = "linux/s390" ] && experimental=true
 
-            BUILD_MATRIX="${BUILD_MATRIX:+$BUILD_MATRIX,}{\"platform\":\"$platform\",\"base\":{\"snap\":\"$base\",\"os\":\"$os\"},\"experimental\":\"$experimental\"}"
+            BUILD_MATRIX="${BUILD_MATRIX:+$BUILD_MATRIX,}{\"platform\":\"$platform\",\"base\":{\"snap\":\"$base\",\"os\":\"$os\"},\"channel\":\"$channel\",\"experimental\":\"$experimental\"}"
             DOCKER_TEST_MATRIX="${DOCKER_TEST_MATRIX:+$DOCKER_TEST_MATRIX,}{\"platform\":\"$platform\",\"channel\":\"$channel\",\"base\":\"$base\",\"runner\":\"$runner\",\"experimental\":$experimental}"
           done
 
@@ -108,8 +108,9 @@ jobs:
         no-cache: true
         push: false
         outputs: type=docker,dest=test-image.tar
-        build-args:
+        build-args: |
           BASE_OS=${{ matrix.base.os }}
+          SNAPCRAFT_CHANNEL=${{ matrix.channel }}
     - name: Save container image
       id: save_image
       run: |
