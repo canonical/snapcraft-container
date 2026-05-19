@@ -7,12 +7,7 @@ FROM ubuntu:${BASE_OS} AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 ARG TARGETARCH
 ARG SNAPCRAFT_CHANNEL
-RUN case "$TARGETARCH" in \
-      amd64) echo "amd64" > /tmp/arch ;; \
-      arm64) echo "arm64" > /tmp/arch ;; \
-      armhf|arm) echo "armhf" > /tmp/arch ;; \
-      *) echo "$TARGETARCH" > /tmp/arch ;; \
-    esac
+RUN echo "$TARGETARCH" > /tmp/arch
 ENV ARCH_FILE=/tmp/arch
 
 # Grab dependencies
@@ -37,9 +32,11 @@ RUN unsquashfs -d /snap/snapcraft/current snapcraft.snap
 
 # Fix Python3 installation: Make sure we use the interpreter from
 # the snapcraft snap:
-RUN unlink /snap/snapcraft/current/usr/bin/python3 || unlink /snap/snapcraft/current/bin/python3
-RUN ln -s /snap/snapcraft/current/usr/bin/python3.* /snap/snapcraft/current/usr/bin/python3 || ln -s /snap/snapcraft/current/bin/python3.* /snap/snapcraft/current/bin/python3
-RUN echo /snap/snapcraft/current/lib/python3.*/site-packages >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
+RUN unlink /snap/snapcraft/current/usr/bin/python3
+RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' ! -name '*-*' | head -1) \
+    && ln -s "$PYTHON3" /snap/snapcraft/current/usr/bin/python3
+RUN PYVER=$(find /snap/snapcraft/current/lib/ -name 'python3.*' -type d | head -1) \
+    && echo "$PYVER/site-packages" >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
 
 # Create a snapcraft runner
 RUN mkdir -p /snap/bin
@@ -75,4 +72,4 @@ ENV LC_ALL="en_US.UTF-8"
 ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:$PATH"
 ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
 
-CMD ["snapcraft"]
+CMD ["/snap/bin/snapcraft"]
