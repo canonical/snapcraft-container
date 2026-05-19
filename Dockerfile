@@ -8,17 +8,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Run apt-get commands together to always ensure apt-get update is run
 # before using apt-get install to avoid issues with stale apt caches.
 RUN apt-get update -qq && \
-	apt-get dist-upgrade --yes && \
-	apt-get install --yes -qq --no-install-recommends \
-		build-essential \
-		fuse \
-		gnupg \
+  apt-get dist-upgrade --yes && \
+  apt-get install --yes -qq --no-install-recommends \
+    build-essential \
+    fuse \
+    gnupg \
     kmod \
-		python3 \
-		snapd \
+    python3 \
+    snapd \
     squashfuse \
-		sudo \
-		systemd
+    sudo \
+    systemd
 
 # Clean apt lists because we'll be copying the entire filesystem to a blank image
 RUN apt-get clean
