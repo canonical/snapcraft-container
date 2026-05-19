@@ -1,90 +1,78 @@
+# From: https://github.com/canonical/snapcraft/issues/5079#issuecomment-2414199613
 ARG BASE_OS=xenial
+ARG SNAPCRAFT_CHANNEL=7.x/stable
 
 # Prepare the filesystem to copy into a blank image
-FROM ubuntu:${BASE_OS} AS base
+FROM ubuntu:${BASE_OS} AS builder
+ENV DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
+ARG SNAPCRAFT_CHANNEL
+RUN case "$TARGETARCH" in \
+      amd64) echo "amd64" > /tmp/arch ;; \
+      arm64) echo "arm64" > /tmp/arch ;; \
+      armhf|arm) echo "armhf" > /tmp/arch ;; \
+      *) echo "$TARGETARCH" > /tmp/arch ;; \
+    esac
+ENV ARCH_FILE=/tmp/arch
 
+# Grab dependencies
+RUN apt-get update
+RUN apt-get dist-upgrade --yes
+RUN apt-get install --yes \
+      curl \
+      jq \
+      squashfs-tools
+
+# download and extract core22 (required for snapcraft to run)
+RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
+    'https://api.snapcraft.io/api/v1/snaps/details/core22' | jq '.download_url' -r) --output core22.snap
+RUN mkdir -p /snap/core22
+RUN unsquashfs -d /snap/core22/current core22.snap
+
+# download and extract snapcraft
+RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
+    "https://api.snapcraft.io/api/v1/snaps/details/snapcraft?channel=${SNAPCRAFT_CHANNEL}" | jq '.download_url' -r) --output snapcraft.snap
+RUN mkdir -p /snap/snapcraft
+RUN unsquashfs -d /snap/snapcraft/current snapcraft.snap
+
+# Fix Python3 installation: Make sure we use the interpreter from
+# the snapcraft snap:
+RUN unlink /snap/snapcraft/current/usr/bin/python3 || unlink /snap/snapcraft/current/bin/python3
+RUN ln -s /snap/snapcraft/current/usr/bin/python3.* /snap/snapcraft/current/usr/bin/python3 || ln -s /snap/snapcraft/current/bin/python3.* /snap/snapcraft/current/bin/python3
+RUN echo /snap/snapcraft/current/lib/python3.*/site-packages >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
+
+# Create a snapcraft runner
+RUN mkdir -p /snap/bin
+RUN echo "#!/bin/sh" > /snap/bin/snapcraft
+RUN snap_version="$(awk '/^version:/{print $2}' /snap/snapcraft/current/meta/snap.yaml | tr -d \')" && echo "export SNAP_VERSION=\"$snap_version\"" >> /snap/bin/snapcraft
+RUN echo 'exec "/snap/snapcraft/current/bin/python3" -m snapcraft "$@"' >> /snap/bin/snapcraft
+RUN chmod +x /snap/bin/snapcraft
+
+# download and extract core24
+RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
+    'https://api.snapcraft.io/api/v1/snaps/details/core24' | jq '.download_url' -r) --output core24.snap
+RUN mkdir -p /snap/core24
+RUN unsquashfs -d /snap/core24/current core24.snap
+
+FROM ubuntu:noble
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Run apt-get commands together to always ensure apt-get update is run
-# before using apt-get install to avoid issues with stale apt caches.
-RUN apt-get update -qq && \
-  apt-get dist-upgrade --yes && \
-  apt-get install --yes -qq --no-install-recommends \
-    build-essential \
-    fuse \
-    gnupg \
-    kmod \
-    python3 \
-    snapd \
-    squashfuse \
-    sudo \
-    systemd
+COPY --from=builder /snap/core22 /snap/core22
+COPY --from=builder /snap/core24 /snap/core24
+COPY --from=builder /snap/snapcraft /snap/snapcraft
+COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
-# Clean apt lists because we'll be copying the entire filesystem to a blank image
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists
-
-# Ensure snapd's system-key file exists
-RUN touch /var/lib/snapd/system-key
-
-# stop udevadm from working
-RUN dpkg-divert --local --rename --add /sbin/udevadm
-RUN ln -s /bin/true /sbin/udevadm
-
-RUN rm /usr/bin/systemd-detect-virt || true
-ADD systemd-detect-virt /usr/bin/
-
-# remove systemd 'wants' triggers
-RUN rm -f \
-		/etc/systemd/system/*.wants/* \
-		/lib/systemd/system/local-fs.target.wants/* \
-		/lib/systemd/system/multi-user.target.wants/* \
-		/lib/systemd/system/sockets.target.wants/*initctl*
-
-# remove everything except tmpfiles setup in sysinit target
-RUN find \
-		/lib/systemd/system/sysinit.target.wants \
-		\( -type f -or -type l \) -and -not -name '*systemd-tmpfiles-setup*' \
-		-delete
-
-# remove UTMP updater service
-RUN rm -f /lib/systemd/system/systemd-update-utmp-runlevel.service
-
-# disable /tmp mount
-RUN rm -vf /usr/share/systemd/tmp.mount
-
-# disable most systemd console output
-RUN echo ShowStatus=no >> /etc/systemd/system.conf
-
-# disable ondemand.service
-RUN systemctl disable ondemand.service || true
-
-# set basic.target as default
-RUN systemctl set-default basic.target
-
-# enable the services we care about
-RUN systemctl enable snapd.service
-RUN systemctl enable snapd.socket
-
-
-# The actual snapcraft image
-FROM scratch
-
+# Generate locale and install dependencies.
+RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils && locale-gen en_US.UTF-8
+RUN mkdir /snap/snapcraft/current/usr/share/snapcraft/keyrings \
+    /snap/snapcraft/current/usr/share/snapcraft/extensions \
+    /snap/snapcraft/current/usr/share/snapcraft/plugins \
+    /snap/snapcraft/current/usr/share/snapcraft/schema -p
 # Set the proper environment.
-ENV container=docker \
-	init=/lib/systemd/systemd
+ENV LANG="en_US.UTF-8"
+ENV LANGUAGE="en_US:en"
+ENV LC_ALL="en_US.UTF-8"
+ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:$PATH"
+ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
 
-# Copy the entire filesystem from the base image
-COPY --from=base / /
-
-# Add our entrypoint
-ADD entrypoint.sh /bin/
-
-# Ensure docker sends the shutdown signal that systemd expects
-STOPSIGNAL SIGRTMIN+3
-
-# Set our entrypoint
-ENTRYPOINT ["/bin/entrypoint.sh"]
-
-# Set our default command
 CMD ["snapcraft"]
