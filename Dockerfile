@@ -49,6 +49,11 @@ COPY --from=builder /snap/core24 /snap/core24
 COPY --from=builder /snap/snapcraft /snap/snapcraft
 COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
+# this allows old snapcraft (4.x 5.x) to work because it uses pip to install
+# stuff and in this hack-ish environment it assumes it is doing so in /usr/local/bin
+# but it is actually writing in the snap local one
+RUN rm -rf /usr/local/bin && ln -s /snap/snapcraft/current/usr/local/bin /usr/local/bin
+
 # Generate locale and install dependencies.
 RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils build-essential && locale-gen en_US.UTF-8
 
@@ -59,7 +64,7 @@ RUN mkdir -p /tmp/snapcraft-state
 ENV LANG="en_US.UTF-8"
 ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
-ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:/snap/bin:/snap/snapcraft/current/usr/bin:$PATH"
+ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:/snap/bin:/snap/snapcraft/current/usr/bin:/snap/snapcraft/current/usr/local/bin:$PATH"
 ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
 ENV CRAFT_BUILD_ENVIRONMENT=host
 ENV SNAPCRAFT_MANAGED_MODE=y
