@@ -19,10 +19,12 @@ RUN apt-get install --yes \
       squashfs-tools
 
 # download and extract core22 (required for snapcraft to run)
+
 RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
     'https://api.snapcraft.io/api/v1/snaps/details/core22' | jq '.download_url' -r) --output core22.snap
 RUN mkdir -p /snap/core22
-RUN unsquashfs -d /snap/core22/current core22.snap
+# err 2 is mostly failing to create bougus dev files in /snap/core22/current
+RUN unsquashfs -no-xattrs -d /snap/core22/current core22.snap || [ $? -eq 2 ]
 
 # download and extract snapcraft
 RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
@@ -33,7 +35,7 @@ RUN unsquashfs -d /snap/snapcraft/current snapcraft.snap
 # Fix Python3 installation: Make sure we use the interpreter from
 # the snapcraft snap:
 RUN unlink /snap/snapcraft/current/usr/bin/python3
-RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' ! -name '*-*' | head -1) \
+RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' -type f | head -1) \
     && ln -s "$PYTHON3" /snap/snapcraft/current/usr/bin/python3
 RUN PYVER=$(find /snap/snapcraft/current/lib/ -name 'python3.*' -type d | head -1) \
     && echo "$PYVER/site-packages" >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
@@ -49,9 +51,9 @@ RUN chmod +x /snap/bin/snapcraft
 RUN curl -L $(curl -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: $(cat /tmp/arch)" \
     'https://api.snapcraft.io/api/v1/snaps/details/core24' | jq '.download_url' -r) --output core24.snap
 RUN mkdir -p /snap/core24
-RUN unsquashfs -d /snap/core24/current core24.snap
+RUN unsquashfs -d /snap/core24/current core24.snap || [ $? -eq 2 ]
 
-FROM ubuntu:noble
+FROM ubuntu:${BASE_OS}
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY --from=builder /snap/core22 /snap/core22
@@ -71,5 +73,7 @@ ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
 ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:$PATH"
 ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
+ENV SNAP="/snap/snapcraft/current"
+ENV SNAP_NAME="snapcraft"
 
 CMD ["/snap/bin/snapcraft"]
