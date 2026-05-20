@@ -44,6 +44,7 @@ jobs:
               ;;
             core20)
               os=focal
+              channel=7.x/stable
               ;;
             core22)
               os=jammy
