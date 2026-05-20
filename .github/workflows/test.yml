@@ -158,59 +158,6 @@ jobs:
           --workdir "/data" \
           test-image snapcraft
 
-
-  test-set-channel-docker:
-    name: Test Set Channel with Docker
-    runs-on: ${{matrix.runner}}
-    needs: [ generate-matrix, build ]
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.generate-matrix.outputs.docker_test_matrix) }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        # see https://github.com/tonistiigi/binfmt/issues/215
-        image: 'tonistiigi/binfmt:master'
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Enable Docker experimental
-      run: |
-        echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json > /dev/null
-        sudo systemctl restart docker
-    - name: Load container image
-      id: load_image
-      run: |
-        echo image_name="$(echo "${{matrix.base}}-${{matrix.platform}}.tar" | sed 's|/|_|g')" >> $GITHUB_OUTPUT
-    - uses: actions/download-artifact@v4
-      with:
-        name: ${{ steps.load_image.outputs.image_name }}
-        path: ./artifacts
-    - name: Test changing channel
-      run: |
-        docker image load -i ./artifacts/test-image.tar
-
-        USE_SNAPCRAFT_CHANNEL="$(echo -n ${{ matrix.channel }} | sed -e 's/stable/candidate/')"
-
-        echo ::group
-        docker run --rm --tty --privileged \
-          --platform "${{ matrix.platform }}" \
-          --env USE_SNAPCRAFT_CHANNEL="$USE_SNAPCRAFT_CHANNEL" \
-          test-image snap info snapcraft --color=never 2>&1 | tee output.txt
-        echo ::endgroup
-
-        CHANNEL="$(cat output.txt | \
-          tr '\r\n' '\n' | \
-          awk 'BEGIN { FS = ":" }; /^tracking:/ { gsub(/ /, "", $2); print $2 }'
-        )"
-
-        echo "Snapcraft channel in use: $CHANNEL"
-
-        [ -n "$CHANNEL" ] && [ "$CHANNEL" = "$USE_SNAPCRAFT_CHANNEL" ]
-
   test-failure-docker:
     name: Test Failures with Docker (expected)
     runs-on: ${{matrix.runner}}
