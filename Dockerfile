@@ -34,9 +34,12 @@ RUN unsquashfs -d /snap/snapcraft/current snapcraft.snap
 
 # Fix Python3 installation: Make sure we use the interpreter from
 # the snapcraft snap:
-RUN unlink /snap/snapcraft/current/usr/bin/python3
+RUN unlink /snap/snapcraft/current/usr/bin/python3 || true
+RUN unlink /snap/snapcraft/current/bin/python3 || true
 RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' -type f | head -1) \
     && ln -s "$PYTHON3" /snap/snapcraft/current/usr/bin/python3
+RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' -type f | head -1) \
+    && ln -s "$PYTHON3" /snap/snapcraft/current/bin/python3
 RUN PYVER=$(find /snap/snapcraft/current/lib/ -name 'python3.*' -type d | head -1) \
     && echo "$PYVER/site-packages" >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
 
