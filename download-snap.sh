@@ -14,11 +14,11 @@ DOWNLOAD_URL=$(curl -s -H 'X-Ubuntu-Series: 16' -H "X-Ubuntu-Architecture: ${ARC
     "$API_URL" | jq '.download_url' -r)
 
 echo "Downloading ${SNAP_NAME} (channel: ${CHANNEL}, arch: ${ARCH})..."
-curl -L "$DOWNLOAD_URL" --output "${SNAP_NAME}.snap"
+curl -L "$DOWNLOAD_URL" --output /tmp/"${SNAP_NAME}.snap"
 
 mkdir -p "/snap/${SNAP_NAME}"
 # Exit code 2 from unsquashfs is typically from failing to create device files, which is harmless
-unsquashfs -d "/snap/${SNAP_NAME}/current" "${SNAP_NAME}.snap" || [ $? -eq 2 ]
+unsquashfs -d "/snap/${SNAP_NAME}/current" /tmp/"${SNAP_NAME}.snap" || true
 
 rm -f "${SNAP_NAME}.snap"
 

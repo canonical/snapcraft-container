@@ -19,9 +19,11 @@ RUN apt-get install --yes \
       squashfs-tools
 
 COPY download-snap.sh /usr/local/bin/
+RUN download-snap.sh core
+RUN download-snap.sh core18
+RUN download-snap.sh core20
 RUN download-snap.sh core22
 RUN download-snap.sh core24
-RUN download-snap.sh core18
 RUN download-snap.sh snapcraft $SNAPCRAFT_CHANNEL
 
 # Fix Python3 installation: Make sure we use the interpreter from
@@ -43,8 +45,10 @@ COPY snapcraft /snap/bin/snapcraft
 FROM ubuntu:${BASE_OS}
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY --from=builder /snap/core22 /snap/core22
+COPY --from=builder /snap/core /snap/core
 COPY --from=builder /snap/core18 /snap/core18
+COPY --from=builder /snap/core20 /snap/core20
+COPY --from=builder /snap/core22 /snap/core22
 COPY --from=builder /snap/core24 /snap/core24
 COPY --from=builder /snap/snapcraft /snap/snapcraft
 COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
@@ -52,7 +56,9 @@ COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 # this allows old snapcraft (4.x 5.x) to work because it uses pip to install
 # stuff and in this hack-ish environment it assumes it is doing so in /usr/local/bin
 # but it is actually writing in the snap local one
-RUN rm -rf /usr/local/bin && ln -s /snap/snapcraft/current/usr/local/bin /usr/local/bin
+RUN case "${SNAPCRAFT_CHANNEL}" in \
+      4.*|5.*) rm -rf /usr/local/bin && ln -s /snap/snapcraft/current/usr/local/bin /usr/local/bin ;; \
+    esac
 
 # Generate locale and install dependencies.
 RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils build-essential && locale-gen en_US.UTF-8
