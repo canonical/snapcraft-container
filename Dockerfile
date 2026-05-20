@@ -65,18 +65,21 @@ COPY --from=builder /snap/snapcraft /snap/snapcraft
 COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
 # Generate locale and install dependencies.
-RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils && locale-gen en_US.UTF-8
-RUN mkdir /snap/snapcraft/current/usr/share/snapcraft/keyrings \
-    /snap/snapcraft/current/usr/share/snapcraft/extensions \
-    /snap/snapcraft/current/usr/share/snapcraft/plugins \
-    /snap/snapcraft/current/usr/share/snapcraft/schema -p
+RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils build-essential && locale-gen en_US.UTF-8
+
 # Set the proper environment.
 ENV LANG="en_US.UTF-8"
 ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
-ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:$PATH"
+ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:/snap/bin:/snap/snapcraft/current/usr/bin:$PATH"
+
 ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
+ENV CRAFT_BUILD_ENVIRONMENT=host
+ENV SNAPCRAFT_MANAGED_MODE=y
+ENV CRAFT_MANAGED_MODE=1
+ENV SNAPCRAFT_VERBOSITY_LEVEL=verbose
+ENV CRAFT_VERBOSITY_LEVEL=verbose
 ENV SNAP="/snap/snapcraft/current"
 ENV SNAP_NAME="snapcraft"
 
-CMD ["/snap/bin/snapcraft"]
+#CMD ["/snap/bin/snapcraft"]
