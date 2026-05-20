@@ -7,7 +7,13 @@ FROM ubuntu:${BASE_OS} AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 ARG TARGETARCH
 ARG SNAPCRAFT_CHANNEL
-RUN echo "$TARGETARCH" > /tmp/arch
+
+RUN if [ "$TARGETARCH" = "arm" ]; then \
+        echo "armhf" > /tmp/arch; \
+    else \
+        echo "$TARGETARCH" > /tmp/arch; \
+    fi
+
 ENV ARCH_FILE=/tmp/arch
 
 # Grab dependencies
@@ -19,9 +25,14 @@ RUN apt-get install --yes \
       squashfs-tools
 
 COPY download-snap.sh /usr/local/bin/
-RUN download-snap.sh core
-RUN download-snap.sh core18
-RUN download-snap.sh core20
+# these don't exist on risc64, create the dir to make COPY pass below
+RUN if [ "$TARGETARCH" = "riscv64" ]; then \
+        mkdir -p /snap/core /snap/core18 /snap/core20; \
+    else \
+        download-snap.sh core && \
+        download-snap.sh core18 && \
+        download-snap.sh core20; \
+    fi
 RUN download-snap.sh core22
 RUN download-snap.sh core24
 RUN download-snap.sh snapcraft $SNAPCRAFT_CHANNEL
