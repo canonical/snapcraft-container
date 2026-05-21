@@ -82,7 +82,7 @@ jobs:
 
   build:
     name: Build PR
-    runs-on: ${{ matrix.base.os != 'jammy' && 'ubuntu-latest' || 'ubuntu-22.04' }}
+    runs-on: ubuntu-latest
     needs: generate-matrix
     strategy:
       fail-fast: false
@@ -156,9 +156,9 @@ jobs:
         docker image load -i ./artifacts/test-image.tar
         docker run --rm --tty --privileged \
           --platform "${{ matrix.platform }}" \
-          --env USE_SNAPCRAFT_CHANNEL="${{ matrix.channel }}" \
-          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/data" \
-          --workdir "/data" \
+          --env QEMU_SAFE="1" \
+          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/root/project" \
+          --workdir "/root/project" \
           test-image snapcraft
 
   test-failure-docker:
@@ -199,8 +199,8 @@ jobs:
         if docker run --rm --tty --privileged \
           --platform "${{ matrix.platform }}" \
           --env USE_SNAPCRAFT_CHANNEL="${{ matrix.channel }}" \
-          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/data" \
-          --workdir "/data" \
+          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/root/project" \
+          --workdir "/root/project" \
           test-image snapcraft
         then
           echo "Snapcraft build should have failed"
