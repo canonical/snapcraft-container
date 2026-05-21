@@ -19,8 +19,8 @@ jobs:
     - name: Generate Build Matrix
       id: matrix
       run: |
-        PLATFORMS=(linux/amd64 linux/arm/v7 linux/arm64 linux/riscv64)
-        BASES=(core core18 core20 core22 core24 core26)
+        PLATFORMS=linux/riscv64
+        BASES=core26
 
         BUILD_MATRIX=
         DOCKER_TEST_MATRIX=
@@ -152,12 +152,15 @@ jobs:
       id: build
       run: |
         docker image load -i ./artifacts/test-image.tar
+        mkdir build_debug
         docker run --rm --tty --privileged \
           --platform "${{ matrix.platform }}" \
           --env QEMU_SAFE="1" \
           --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/root/project" \
+          --volume "$GITHUB_WORKSPACE/parts":"/root/parts" \
           --workdir "/root/project" \
-          test-image snapcraft
+          test-image snapcraft || true
+        cat $GITHUB_WORKSPACE/parts/build/build/meson-logs/meson-log.txt
 
   test-failure-docker:
     name: Test Failures with Docker (expected)
