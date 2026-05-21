@@ -1,0 +1,34 @@
+#!/bin/sh
+
+SCRIPT_DIR=$(dirname "$0")
+
+if [ "${QEMU_SAFE:-}" = "1" ]; then
+    num_args=$#
+    while [ "$num_args" -gt 0 ]; do
+        case "$1" in
+            -processors)
+                if [ "$num_args" -ge 2 ]; then
+                    shift 2
+                    num_args=$((num_args - 2))
+                else
+                    shift 1
+                    num_args=$((num_args - 1))
+                fi
+                ;;
+            -processors=*)
+                shift 1
+                num_args=$((num_args - 1))
+                ;;
+            *)
+                arg="$1"
+                shift
+                set -- "$@" "$arg"
+                num_args=$((num_args - 1))
+                ;;
+        esac
+    done
+
+    exec "$SCRIPT_DIR/_mksquashfs" "$@" -processors 1
+else
+    exec "$SCRIPT_DIR/_mksquashfs" "$@"
+fi

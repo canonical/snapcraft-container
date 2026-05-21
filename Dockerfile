@@ -72,10 +72,17 @@ RUN case "${SNAPCRAFT_CHANNEL}" in \
     esac
 
 # Generate locale and install dependencies.
-RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales git binutils build-essential && locale-gen en_US.UTF-8
+RUN apt-get update \
+  && apt-get dist-upgrade --yes \
+  && apt-get install --yes snapd sudo locales git binutils build-essential \
+  && locale-gen en_US.UTF-8
 
 RUN mkdir -p /tmp/craft-state
 RUN mkdir -p /tmp/snapcraft-state
+
+COPY qemu_safe.sh /qemu_safe.sh
+COPY mksquashfs /mksquashfs
+RUN ./qemu_safe.sh
 
 # Set the proper environment.
 ENV LANG="en_US.UTF-8"
