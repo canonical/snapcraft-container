@@ -35,6 +35,7 @@ RUN if [ "$TARGETARCH" = "riscv64" ]; then \
     fi
 RUN download-snap.sh core22
 RUN download-snap.sh core24
+RUN download-snap.sh core26
 RUN download-snap.sh snapcraft $SNAPCRAFT_CHANNEL
 
 # Fix Python3 installation: Make sure we use the interpreter from
@@ -61,6 +62,7 @@ COPY --from=builder /snap/core18 /snap/core18
 COPY --from=builder /snap/core20 /snap/core20
 COPY --from=builder /snap/core22 /snap/core22
 COPY --from=builder /snap/core24 /snap/core24
+COPY --from=builder /snap/core26 /snap/core26
 COPY --from=builder /snap/snapcraft /snap/snapcraft
 COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
@@ -82,6 +84,7 @@ RUN mkdir -p /tmp/snapcraft-state
 
 COPY qemu_safe.sh /qemu_safe.sh
 COPY mksquashfs /mksquashfs
+COPY force_qemu_cpu_max.c /force_qemu_cpu_max.c
 RUN ./qemu_safe.sh
 
 # Set the proper environment.
