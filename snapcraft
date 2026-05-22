@@ -1,14 +1,4 @@
 #!/bin/bash
 
-if [ "$(uname -m)" = "riscv64" ] && [ -f /etc/os-release ]; then
-    . /etc/os-release
-
-    MAJOR_VERSION=$(echo "$VERSION_ID" | cut -d. -f1)
-
-    if [ "${MAJOR_VERSION:-0}" -ge 26 ] 2>/dev/null; then
-        export QEMU_CPU="max"
-    fi
-fi
-
 export SNAP_VERSION="$(awk '/version:/ {print $2; exit}' /snap/snapcraft/current/meta/snap.yaml)"
 exec /snap/snapcraft/current/bin/snapcraft "$@"
