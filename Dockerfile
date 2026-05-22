@@ -84,7 +84,6 @@ RUN mkdir -p /tmp/snapcraft-state
 
 COPY qemu_safe.sh /qemu_safe.sh
 COPY mksquashfs /mksquashfs
-COPY sitecustomize.py /sitecustomize.py
 RUN ./qemu_safe.sh
 
 # Set the proper environment.
