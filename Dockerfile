@@ -84,14 +84,14 @@ RUN mkdir -p /tmp/snapcraft-state
 
 COPY qemu_safe.sh /qemu_safe.sh
 COPY mksquashfs /mksquashfs
-COPY force_qemu_cpu_max.c /force_qemu_cpu_max.c
+COPY sitecustomize.py /sitecustomize.py
 RUN ./qemu_safe.sh
 
 # Set the proper environment.
 ENV LANG="en_US.UTF-8"
 ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
-ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:/snap/bin:/snap/snapcraft/current/usr/bin:/snap/snapcraft/current/usr/local/bin:$PATH"
+ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:$PATH:/snap/snapcraft/current/usr/bin:/snap/snapcraft/current/usr/local/bin"
 ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
 ENV CRAFT_BUILD_ENVIRONMENT=host
 ENV SNAPCRAFT_MANAGED_MODE=y

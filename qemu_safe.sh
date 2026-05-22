@@ -16,3 +16,15 @@ find /snap -type f -name "mksquashfs" | while read -r target_path; do
     cp "$SOURCE_WRAPPER" "$target_path"
     chmod +x "$target_path"
 done
+
+if [ "$(uname -m)" = "riscv64" ] && [ -f /etc/os-release ]; then
+    . /etc/os-release
+
+    MAJOR_VERSION=$(echo "$VERSION_ID" | cut -d. -f1)
+
+    if [ "${MAJOR_VERSION:-0}" -ge 26 ] 2>/dev/null; then
+        find /snap -type f -name "site-packages" | while read -r target_path; do
+            cp /sitecustomize.py $target_path/sitecustomize.py
+        done
+    fi
+fi
