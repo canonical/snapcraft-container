@@ -25,6 +25,6 @@ unsquashfs -l /tmp/"${SNAP_NAME}.snap" | \
   grep -v '^squashfs-root$' > /tmp/${SNAP_NAME}keep_list.txt
 unsquashfs -d "/snap/${SNAP_NAME}/current" -ef /tmp/${SNAP_NAME}keep_list.txt  /tmp/"${SNAP_NAME}.snap"
 
-rm -f "${SNAP_NAME}.snap"
+rm -f "/tmp/${SNAP_NAME}.snap"
 
 echo "Installed ${SNAP_NAME} to /snap/${SNAP_NAME}/current"

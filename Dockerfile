@@ -14,8 +14,6 @@ RUN if [ "$TARGETARCH" = "arm" ]; then \
         echo "$TARGETARCH" > /tmp/arch; \
     fi
 
-ENV ARCH_FILE=/tmp/arch
-
 # Grab dependencies
 RUN apt-get update
 RUN apt-get dist-upgrade --yes
@@ -100,4 +98,4 @@ ENV CRAFT_VERBOSITY_LEVEL=verbose
 ENV SNAP="/snap/snapcraft/current"
 ENV SNAP_NAME="snapcraft"
 
-#CMD ["/snap/bin/snapcraft"]
+CMD ["/snap/bin/snapcraft"]
