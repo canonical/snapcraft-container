@@ -1,86 +1,99 @@
+# From: https://github.com/canonical/snapcraft/issues/5079#issuecomment-2414199613
 ARG BASE_OS=xenial
+ARG SNAPCRAFT_CHANNEL=7.x/stable
 
 # Prepare the filesystem to copy into a blank image
-FROM ubuntu:${BASE_OS} AS base
+FROM ubuntu:${BASE_OS} AS builder
+ENV DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
+ARG SNAPCRAFT_CHANNEL
 
+RUN if [ "$TARGETARCH" = "arm" ]; then \
+        echo "armhf" > /tmp/arch; \
+    else \
+        echo "$TARGETARCH" > /tmp/arch; \
+    fi
+
+# Grab dependencies
+RUN apt-get update
+RUN apt-get dist-upgrade --yes
+RUN apt-get install --yes \
+      curl \
+      jq \
+      squashfs-tools
+
+COPY download-snap.sh /usr/local/bin/
+# these don't exist on risc64, create the dir to make COPY pass below
+RUN if [ "$TARGETARCH" = "riscv64" ]; then \
+        mkdir -p /snap/core /snap/core18 /snap/core20; \
+    else \
+        download-snap.sh core && \
+        download-snap.sh core18 && \
+        download-snap.sh core20; \
+    fi
+RUN download-snap.sh core22
+RUN download-snap.sh core24
+RUN download-snap.sh core26
+RUN download-snap.sh snapcraft $SNAPCRAFT_CHANNEL
+
+# Fix Python3 installation: Make sure we use the interpreter from
+# the snapcraft snap:
+RUN unlink /snap/snapcraft/current/usr/bin/python3 || true
+RUN unlink /snap/snapcraft/current/bin/python3 || true
+RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' -type f | head -1) \
+    && ln -s "$PYTHON3" /snap/snapcraft/current/usr/bin/python3
+RUN PYTHON3=$(find /snap/snapcraft/current/ -name 'python3.*' -type f | head -1) \
+    && ln -s "$PYTHON3" /snap/snapcraft/current/bin/python3
+RUN PYVER=$(find /snap/snapcraft/current/lib/ -name 'python3.*' -type d | head -1) \
+    && echo "$PYVER/site-packages" >> /snap/snapcraft/current/usr/lib/python3/dist-packages/site-packages.pth
+
+# Create a snapcraft runner
+RUN mkdir -p /snap/bin
+COPY snapcraft /snap/bin/snapcraft
+
+
+FROM ubuntu:${BASE_OS}
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Run apt-get commands together to always ensure apt-get update is run
-# before using apt-get install to avoid issues with stale apt caches.
-RUN apt-get update -qq && \
-	apt-get dist-upgrade --yes && \
-	apt-get install --yes -qq --no-install-recommends \
-		build-essential \
-		fuse \
-		gnupg \
-		python3 \
-		snapd \
-		sudo \
-		systemd
+COPY --from=builder /snap/core /snap/core
+COPY --from=builder /snap/core18 /snap/core18
+COPY --from=builder /snap/core20 /snap/core20
+COPY --from=builder /snap/core22 /snap/core22
+COPY --from=builder /snap/core24 /snap/core24
+COPY --from=builder /snap/core26 /snap/core26
+COPY --from=builder /snap/snapcraft /snap/snapcraft
+COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
-# Clean apt lists because we'll be copying the entire filesystem to a blank image
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists
+# this allows old snapcraft (4.x 5.x) to work because it uses pip to install
+# stuff and in this hack-ish environment it assumes it is doing so in /usr/local/bin
+# but it is actually writing in the snap local one
+RUN case "${SNAPCRAFT_CHANNEL}" in \
+      4.*|5.*) rm -rf /usr/local/bin && ln -s /snap/snapcraft/current/usr/local/bin /usr/local/bin ;; \
+    esac
 
-# Ensure snapd's system-key file exists
-RUN touch /var/lib/snapd/system-key
+# Generate locale and install dependencies.
+RUN apt-get update \
+  && apt-get dist-upgrade --yes \
+  && apt-get install --yes snapd sudo locales git binutils build-essential \
+  && locale-gen en_US.UTF-8
 
-# stop udevadm from working
-RUN dpkg-divert --local --rename --add /sbin/udevadm
-RUN ln -s /bin/true /sbin/udevadm
+RUN mkdir -p /tmp/craft-state
+RUN mkdir -p /tmp/snapcraft-state
 
-# remove systemd 'wants' triggers
-RUN rm -f \
-		/etc/systemd/system/*.wants/* \
-		/lib/systemd/system/local-fs.target.wants/* \
-		/lib/systemd/system/multi-user.target.wants/* \
-		/lib/systemd/system/sockets.target.wants/*initctl*
-
-# remove everything except tmpfiles setup in sysinit target
-RUN find \
-		/lib/systemd/system/sysinit.target.wants \
-		\( -type f -or -type l \) -and -not -name '*systemd-tmpfiles-setup*' \
-		-delete
-
-# remove UTMP updater service
-RUN rm -f /lib/systemd/system/systemd-update-utmp-runlevel.service
-
-# disable /tmp mount
-RUN rm -vf /usr/share/systemd/tmp.mount
-
-# disable most systemd console output
-RUN echo ShowStatus=no >> /etc/systemd/system.conf
-
-# disable ondemand.service
-RUN systemctl disable ondemand.service || true
-
-# set basic.target as default
-RUN systemctl set-default basic.target
-
-# enable the services we care about
-RUN systemctl enable snapd.service
-RUN systemctl enable snapd.socket
-
-
-# The actual snapcraft image
-FROM scratch
+COPY qemu_safe.sh /qemu_safe.sh
+COPY mksquashfs /mksquashfs
+RUN ./qemu_safe.sh
 
 # Set the proper environment.
-ENV container=docker \
-	init=/lib/systemd/systemd
-
-# Copy the entire filesystem from the base image
-COPY --from=base / /
-
-# Add our entrypoint
-ADD entrypoint.sh /bin/
-ADD systemd-detect-virt /usr/bin/
-
-# Ensure docker sends the shutdown signal that systemd expects
-STOPSIGNAL SIGRTMIN+3
-
-# Set our entrypoint
-ENTRYPOINT ["/bin/entrypoint.sh"]
-
-# Set our default command
-CMD ["snapcraft"]
+ENV LANG="en_US.UTF-8"
+ENV LANGUAGE="en_US:en"
+ENV LC_ALL="en_US.UTF-8"
+ENV PATH="/snap/snapcraft/current/libexec/snapcraft/:/snap/bin:/snap/snapcraft/current/bin:$PATH:/snap/snapcraft/current/usr/bin:/snap/snapcraft/current/usr/local/bin"
+ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
+ENV CRAFT_BUILD_ENVIRONMENT=host
+ENV SNAPCRAFT_MANAGED_MODE=y
+ENV CRAFT_MANAGED_MODE=1
+ENV SNAPCRAFT_VERBOSITY_LEVEL=verbose
+ENV CRAFT_VERBOSITY_LEVEL=verbose
+ENV SNAP="/snap/snapcraft/current"
+ENV SNAP_NAME="snapcraft"

@@ -19,8 +19,8 @@ jobs:
     - name: Generate Build Matrix
       id: matrix
       run: |
-        PLATFORMS=(linux/amd64 linux/arm/v7 linux/arm64 linux/riscv64) # linux/s390x)
-        BASES=(core core18 core20 core22 core24)
+        PLATFORMS=(linux/amd64 linux/arm/v7 linux/arm64 linux/riscv64)
+        BASES=(core core18 core20 core22 core24 core26)
 
         BUILD_MATRIX=
         DOCKER_TEST_MATRIX=
@@ -44,6 +44,7 @@ jobs:
               ;;
             core20)
               os=focal
+              channel=7.x/stable
               ;;
             core22)
               os=jammy
@@ -51,18 +52,24 @@ jobs:
             core24)
               os=noble
               ;;
+            core26)
+              os=resolute
+              ;;
           esac
 
           for platform in ${PLATFORMS[@]}; do
-            # only build risv64 for core24 and core22
-            [ "$platform" = "linux/riscv64" ] && [ "$base" != "core24" ] && [ "$base" != "core22" ] && continue
+            # only build risv64 for core26, core24 and core22
+            [ "$platform" = "linux/riscv64" ] && [ "$base" != "core26" ] && [ "$base" != "core24" ] && [ "$base" != "core22" ] && continue
+            # armhf is no longer supported on core26
+            [ "$platform" = "linux/arm/v7" ] && [ "$base" = "core26" ] && continue
+
             [ "$platform" = "linux/386"  ] &&   [ "$base" != "core" ] && [ "$base" != "core18" ]   && continue
             [ "$platform" = "linux/s390" ] && ( [ "$base"  = "core" ] || [ "$base"  = "core18" ] ) && continue
 
             experimental=false
             [ "$platform" = "linux/s390" ] && experimental=true
 
-            BUILD_MATRIX="${BUILD_MATRIX:+$BUILD_MATRIX,}{\"platform\":\"$platform\",\"base\":{\"snap\":\"$base\",\"os\":\"$os\"},\"experimental\":\"$experimental\"}"
+            BUILD_MATRIX="${BUILD_MATRIX:+$BUILD_MATRIX,}{\"platform\":\"$platform\",\"base\":{\"snap\":\"$base\",\"os\":\"$os\"},\"channel\":\"$channel\",\"experimental\":\"$experimental\"}"
             DOCKER_TEST_MATRIX="${DOCKER_TEST_MATRIX:+$DOCKER_TEST_MATRIX,}{\"platform\":\"$platform\",\"channel\":\"$channel\",\"base\":\"$base\",\"runner\":\"$runner\",\"experimental\":$experimental}"
           done
 
@@ -73,7 +80,7 @@ jobs:
 
   build:
     name: Build PR
-    runs-on: ${{ matrix.base.os != 'jammy' && 'ubuntu-latest' || 'ubuntu-22.04' }}
+    runs-on: ubuntu-latest
     needs: generate-matrix
     strategy:
       fail-fast: false
@@ -99,8 +106,9 @@ jobs:
         no-cache: true
         push: false
         outputs: type=docker,dest=test-image.tar
-        build-args:
+        build-args: |
           BASE_OS=${{ matrix.base.os }}
+          SNAPCRAFT_CHANNEL=${{ matrix.channel }}
     - name: Save container image
       id: save_image
       run: |
@@ -122,12 +130,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         image: 'tonistiigi/binfmt:master'
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
     - name: Enable Docker experimental
       run: |
         echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json > /dev/null
@@ -144,65 +152,14 @@ jobs:
       id: build
       run: |
         docker image load -i ./artifacts/test-image.tar
+        mkdir build_debug
         docker run --rm --tty --privileged \
           --platform "${{ matrix.platform }}" \
-          --env USE_SNAPCRAFT_CHANNEL="${{ matrix.channel }}" \
-          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/data" \
-          --workdir "/data" \
+          --env QEMU_SAFE="1" \
+          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/root/project" \
+          --volume "$GITHUB_WORKSPACE/parts":"/root/parts" \
+          --workdir "/root/project" \
           test-image snapcraft
-
-
-  test-set-channel-docker:
-    name: Test Set Channel with Docker
-    runs-on: ${{matrix.runner}}
-    needs: [ generate-matrix, build ]
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.generate-matrix.outputs.docker_test_matrix) }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        # see https://github.com/tonistiigi/binfmt/issues/215
-        image: 'tonistiigi/binfmt:master'
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Enable Docker experimental
-      run: |
-        echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json > /dev/null
-        sudo systemctl restart docker
-    - name: Load container image
-      id: load_image
-      run: |
-        echo image_name="$(echo "${{matrix.base}}-${{matrix.platform}}.tar" | sed 's|/|_|g')" >> $GITHUB_OUTPUT
-    - uses: actions/download-artifact@v4
-      with:
-        name: ${{ steps.load_image.outputs.image_name }}
-        path: ./artifacts
-    - name: Test changing channel
-      run: |
-        docker image load -i ./artifacts/test-image.tar
-
-        USE_SNAPCRAFT_CHANNEL="$(echo -n ${{ matrix.channel }} | sed -e 's/stable/candidate/')"
-
-        echo ::group
-        docker run --rm --tty --privileged \
-          --platform "${{ matrix.platform }}" \
-          --env USE_SNAPCRAFT_CHANNEL="$USE_SNAPCRAFT_CHANNEL" \
-          test-image snap info snapcraft --color=never 2>&1 | tee output.txt
-        echo ::endgroup
-
-        CHANNEL="$(cat output.txt | \
-          tr '\r\n' '\n' | \
-          awk 'BEGIN { FS = ":" }; /^tracking:/ { gsub(/ /, "", $2); print $2 }'
-        )"
-
-        echo "Snapcraft channel in use: $CHANNEL"
-
-        [ -n "$CHANNEL" ] && [ "$CHANNEL" = "$USE_SNAPCRAFT_CHANNEL" ]
 
   test-failure-docker:
     name: Test Failures with Docker (expected)
@@ -242,8 +199,8 @@ jobs:
         if docker run --rm --tty --privileged \
           --platform "${{ matrix.platform }}" \
           --env USE_SNAPCRAFT_CHANNEL="${{ matrix.channel }}" \
-          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/data" \
-          --workdir "/data" \
+          --volume "$GITHUB_WORKSPACE/tests/${{ matrix.base }}":"/root/project" \
+          --workdir "/root/project" \
           test-image snapcraft
         then
           echo "Snapcraft build should have failed"

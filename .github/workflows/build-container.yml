@@ -23,18 +23,27 @@ jobs:
         - base: core
           base_os: xenial
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          channel: 4.x/stable
         - base: core18
           base_os: bionic
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          channel: 5.x/stable
         - base: core20
           base_os: focal
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          channel: 7.x/stable
         - base: core22
           base_os: jammy
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
+          channel: latest/stable
         - base: core24
           base_os: noble
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
+          channel: latest/stable
+        - base: core26
+          base_os: resolute
+          platforms: linux/amd64,linux/arm64,linux/riscv64
+          channel: latest/stable
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -79,3 +88,4 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           BASE_OS=${{ matrix.cfg.base_os }}
+          SNAPCRAFT_CHANNEL=${{ matrix.cfg.channel }}
