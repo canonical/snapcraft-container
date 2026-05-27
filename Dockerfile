@@ -97,5 +97,3 @@ ENV SNAPCRAFT_VERBOSITY_LEVEL=verbose
 ENV CRAFT_VERBOSITY_LEVEL=verbose
 ENV SNAP="/snap/snapcraft/current"
 ENV SNAP_NAME="snapcraft"
-
-CMD ["/snap/bin/snapcraft"]
