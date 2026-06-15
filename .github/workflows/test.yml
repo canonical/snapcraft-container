@@ -44,12 +44,15 @@ jobs:
               ;;
             core20)
               os=focal
+              channel=8.x/stable
               ;;
             core22)
               os=jammy
+              channel=8.x/stable
               ;;
             core24)
               os=noble
+              channel=9.x/stable
               ;;
           esac
 

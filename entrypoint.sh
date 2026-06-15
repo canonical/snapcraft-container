@@ -27,8 +27,11 @@ if [ -z "$USE_SNAPCRAFT_CHANNEL" ]; then
             # core18/bionic disabled in snapcraft 6+.
             USE_SNAPCRAFT_CHANNEL="5.x/stable"
             ;;
+        focal)
+            USE_SNAPCRAFT_CHANNEL="8.x/stable"
+            ;;
         *)
-            USE_SNAPCRAFT_CHANNEL="latest/stable"
+            USE_SNAPCRAFT_CHANNEL="9.x/stable"
             ;;
     esac
 else
