@@ -85,7 +85,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         # also see: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2096782
@@ -125,7 +125,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         image: 'tonistiigi/binfmt:master'
@@ -167,7 +167,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         image: 'tonistiigi/binfmt:master'
@@ -219,7 +219,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         image: 'tonistiigi/binfmt:master'
