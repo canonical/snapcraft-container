@@ -42,7 +42,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Docker meta
       id: meta
       uses: docker/metadata-action@v6
