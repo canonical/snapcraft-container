@@ -15,12 +15,9 @@ RUN if [ "$TARGETARCH" = "arm" ]; then \
     fi
 
 # Grab dependencies
-RUN apt-get update
+RUN apt-get update -qq --yes
 RUN apt-get dist-upgrade --yes
-RUN apt-get install --yes \
-      curl \
-      jq \
-      squashfs-tools
+RUN apt-get install --yes curl jq squashfs-tools
 
 COPY download-snap.sh /usr/local/bin/
 # these don't exist on risc64, create the dir to make COPY pass below
