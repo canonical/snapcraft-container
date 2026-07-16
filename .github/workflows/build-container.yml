@@ -60,7 +60,7 @@ jobs:
           org.opencontainers.image.description=Image of Snapcraft for building projects targeting the ${{ matrix.cfg.base }} base snap.
           org.opencontainers.image.authors=massimiliano.girardi@canonical.com
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         # see https://github.com/tonistiigi/binfmt/issues/215
         # also see: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2096782
