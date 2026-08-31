@@ -4,16 +4,12 @@ Usage
 These containers are meant to be used with the action:
 [snapcraft-multiarch-action](https://github.com/canonical/snapcraft-multiarch-action)
 
-These container images start systemd and execute the command line passed on
-invokation. The commandline is executed as an interactive systemd service unit.
+These container images have a pre-baked environment for snap building. They
+contain snapcraft and all the core bases.
 
 *IMPORTANT* These container images are *NOT* compatible with Docker provided
 through the Snap Store due to confinement rules applied to the dockerd
 interfering with (preventing) our container's execution.
-
-You may override the entrypoint with the `--entrypoint` parameter if you need
-to run the container without starting systemd. Or you may drop to a shell with
-systemd running by setting the command to `bash`.
 
 These container images require you to pass `--privileged`.
 
@@ -42,26 +38,20 @@ Running without specifying a command will run `snapcraft` without any
 parameters:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24
+# Note: You MUST mount your project to /root/project
+docker run --rm -it --privileged -v $PWD:/root/project -w /root/project ghcr.io/canonical/snapcraft-container:core26
 ```
 
 To run with parameters, specify `snapcraft [...params]` when creating the
 container:
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 snapcraft stage --enable-experimental-package-repositories
+docker run --rm -it --privileged -v $PWD:/root/project -w /root/project ghcr.io/canonical/snapcraft-container:core26 snapcraft stage --enable-experimental-package-repositories
 ```
 
 Drop to a shell with systemd running
 ------------------------------------
 
 ```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data ghcr.io/canonical/snapcraft-container:core24 bash
-```
-
-Drop to a shell without starting systemd
-----------------------------------------
-
-```bash
-docker run --rm -it --privileged -v $PWD:/data -w /data --entrypoint bash ghcr.io/canonical/snapcraft-container:core24
+docker run --rm -it --privileged -v $PWD:/root/project -w /root/project ghcr.io/canonical/snapcraft-container:core26 bash
 ```
