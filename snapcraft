@@ -1,0 +1,4 @@
+#!/bin/bash
+
+export SNAP_VERSION="$(awk '/version:/ {print $2; exit}' /snap/snapcraft/current/meta/snap.yaml)"
+exec /snap/snapcraft/current/bin/snapcraft "$@"
