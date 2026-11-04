@@ -41,10 +41,16 @@ jobs:
             core18)
               os=bionic
               channel=5.x/stable
+              # temporary: the old snapd/AppArmor in these images fails on
+              # the ubuntu-latest kernel (7.0) and the container hangs
+              runner=ubuntu-22.04
               ;;
             core20)
               os=focal
               channel=8.x/stable
+              # temporary: the old snapd/AppArmor in these images fails on
+              # the ubuntu-latest kernel (7.0) and the container hangs
+              runner=ubuntu-22.04
               ;;
             core22)
               os=jammy
